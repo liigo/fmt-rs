@@ -58,9 +58,9 @@ extern {
     // FMT objects
     fn fmt_new_object() -> *mut FMT;
     fn fmt_object_total(fmt: *mut FMT) -> i32;
-    fn fmt_object_add(fmt: *mut FMT, key: *const i8, val: *mut FMT);
-    fn fmt_object_remove(fmt: *mut FMT, key: *const i8);
-    fn fmt_object_lookup(fmt: *mut FMT, key: *const i8) -> *mut FMT;
+    fn fmt_object_add(fmt: *mut FMT, key: *const u8, val: *mut FMT);
+    fn fmt_object_remove(fmt: *mut FMT, key: *const u8);
+    fn fmt_object_lookup(fmt: *mut FMT, key: *const u8) -> *mut FMT;
 
     // FMT arrays
     fn fmt_new_array() -> *mut FMT;
@@ -84,7 +84,6 @@ pub struct Fmt {
 impl Drop for Fmt {
     fn drop(&mut self) {
         unsafe {
-            println!("fmt_object_put()");
             fmt_object_put(self.fmt);
         }
     }
@@ -218,6 +217,7 @@ impl Fmt {
         }
     }
 
+    /// creates an array fmt object
     pub fn new_array() -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_array()) }
@@ -248,6 +248,40 @@ impl Fmt {
         }
     }
 
+    pub fn new_object() -> Fmt {
+        unsafe {
+            Fmt { fmt: getfmt(fmt_new_object()) }
+        }
+    }
+
+    pub fn object_total(&self) -> i32 {
+        unsafe {
+            fmt_object_total(self.fmt)
+        }
+    }
+
+    pub fn object_lookup(&self, key: &str) -> Option<Fmt> {
+        unsafe {
+            let fmt = fmt_object_lookup(self.fmt, key.as_ptr());
+            if fmt.is_null() {
+                None
+            } else {
+                Some(Fmt {fmt: getfmt(fmt)})
+            }
+        }
+    }
+
+    pub fn object_add(&mut self, key: &str, val: Fmt) {
+        unsafe {
+            fmt_object_add(self.fmt, key.as_ptr(), val.fmt);
+        }
+    }
+
+    pub fn object_remove(&mut self, key: &str) {
+        unsafe {
+            fmt_object_remove(self.fmt, key.as_ptr());
+        }
+    }
 }
 
 #[cfg(test)]
@@ -274,5 +308,23 @@ mod tests {
         assert_eq!(a.array_index(2).get_int(), 3);
         a.array_remove(1);
         assert_eq!(a.array_index(1).get_int(), 3);
+    }
+
+    #[test]
+    #[no_mangle]
+    fn test_fmt_object() {
+        let mut o = Fmt::new_object();
+        assert_eq!(o.object_total(), 0);
+        o.object_add("a", Fmt::new_int(1));
+        o.object_add("b", Fmt::new_byte(2));
+        assert_eq!(o.object_total(), 2);
+
+        let a = o.object_lookup("a").unwrap();
+        assert_eq!(a.get_int(), 1);
+        let b = o.object_lookup("b").unwrap();
+        assert_eq!(b.get_byte(), 2);
+        o.object_remove("b");
+        let b = o.object_lookup("b");
+        assert!(b.is_none());
     }
 }
