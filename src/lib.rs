@@ -98,9 +98,9 @@ fn getfmt(fmt: *mut FMT) -> *mut FMT {
 }
 
 impl Fmt {
-    pub fn new_boolean(v: i32) -> Fmt {
+    pub fn new_boolean(v: bool) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_boolean(v)) }
+            Fmt { fmt: getfmt(fmt_new_boolean(if v {1} else {0})) }
         }
     }
 
@@ -155,6 +155,12 @@ impl Fmt {
     pub fn new_datetime(v: f64) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_datetime(v)) }
+        }
+    }
+
+    pub fn get_boolean(&self) -> bool {
+        unsafe {
+            fmt_get_boolean(self.fmt) != 0
         }
     }
 
@@ -256,7 +262,7 @@ mod tests {
     }
 
     #[test]
-    fn test_array() {
+    fn test_fmt_array() {
         let mut a = Fmt::new_array();
         a.array_append(Fmt::new_int(1));
         a.array_append(Fmt::new_int(2));
@@ -266,7 +272,7 @@ mod tests {
         assert_eq!(a1.get_int(), 1);
         assert_eq!(a.array_index(1).get_int(), 2);
         assert_eq!(a.array_index(2).get_int(), 3);
+        a.array_remove(1);
+        assert_eq!(a.array_index(1).get_int(), 3);
     }
-
 }
-
