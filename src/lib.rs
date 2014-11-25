@@ -64,8 +64,8 @@ extern {
 
     // FMT arrays
     fn fmt_new_array() -> *mut FMT;
-    fn fmt_get_array_len(fmt: *mut FMT) -> i32;
-    fn fmt_array_apped(fmt: *mut FMT, item: *mut FMT);
+    fn fmt_array_length(fmt: *mut FMT) -> u32;
+    fn fmt_array_append(fmt: *mut FMT, item: *mut FMT);
     fn fmt_array_remove(fmt: *mut FMT, index: u32);
     fn fmt_array_get_idx(fmt: *mut FMT, index: u32) -> *mut FMT;
 
@@ -98,61 +98,61 @@ fn getfmt(fmt: *mut FMT) -> *mut FMT {
 }
 
 impl Fmt {
-    pub fn with_boolean(v: i32) -> Fmt {
+    pub fn new_boolean(v: i32) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_boolean(v)) }
         }
     }
 
-    pub fn with_byte(v: u8) -> Fmt {
+    pub fn new_byte(v: u8) -> Fmt {
     unsafe {
             Fmt { fmt: getfmt(fmt_new_byte(v)) }
         }
     }
 
-    pub fn with_short(v: i16) -> Fmt {
+    pub fn new_short(v: i16) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_short(v)) }
         }
     }
 
-    pub fn with_ushort(v: u16) -> Fmt {
+    pub fn new_ushort(v: u16) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_ushort(v)) }
         }
     }
 
-    pub fn with_int(v: i32) -> Fmt {
+    pub fn new_int(v: i32) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_integer(v)) }
         }
     }
     
-    pub fn with_uint(v: u32) -> Fmt {
+    pub fn new_uint(v: u32) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_uinteger(v)) }
         }
     }
 
-    pub fn with_long(v: i64) -> Fmt {
+    pub fn new_long(v: i64) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_long(v)) }
         }
     }
 
-    pub fn with_ulong(v: u64) -> Fmt {
+    pub fn new_ulong(v: u64) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_ulong(v)) }
         }
     }
 
-    pub fn with_double(v: f64) -> Fmt {
+    pub fn new_double(v: f64) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_double(v)) }
         }
     }
 
-    pub fn with_datetime(v: f64) -> Fmt {
+    pub fn new_datetime(v: f64) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(fmt_new_datetime(v)) }
         }
@@ -212,6 +212,35 @@ impl Fmt {
         }
     }
 
+    pub fn new_array() -> Fmt {
+        unsafe {
+            Fmt { fmt: getfmt(fmt_new_array()) }
+        }
+    }
+
+    pub fn array_length(&self) -> u32 {
+        unsafe {
+            fmt_array_length(self.fmt)
+        }
+    }
+
+    pub fn array_append(&mut self, fmt: Fmt) {
+        unsafe {
+            fmt_array_append(self.fmt, fmt.fmt);
+        }
+    }
+
+    pub fn array_remove(&mut self, index: u32) {
+        unsafe {
+            fmt_array_remove(self.fmt, index);
+        }
+    }
+
+    pub fn array_index(&self, index: u32) -> Fmt {
+        unsafe {
+            Fmt { fmt: getfmt(fmt_array_get_idx(self.fmt, index)) }
+        }
+    }
 
 }
 
@@ -219,11 +248,24 @@ impl Fmt {
 mod tests {
     use Fmt;
     #[test]
-    fn test_fmt_byte() {
-        let fmt = Fmt::with_byte(16u8);
-        assert_eq!(fmt.get_byte(), 16u8)
-        let fmt = Fmt::with_int(6i32);
-        assert_eq!(fmt.get_int(), 6i32);
+    fn test_fmt_primitives() {
+        let fmt = Fmt::new_byte(16);
+        assert_eq!(fmt.get_byte(), 16)
+        let fmt = Fmt::new_int(8);
+        assert_eq!(fmt.get_int(), 8);
+    }
+
+    #[test]
+    fn test_array() {
+        let mut a = Fmt::new_array();
+        a.array_append(Fmt::new_int(1));
+        a.array_append(Fmt::new_int(2));
+        a.array_append(Fmt::new_int(3));
+        assert_eq!(a.array_length(), 3);
+        let a1 = a.array_index(0);
+        assert_eq!(a1.get_int(), 1);
+        assert_eq!(a.array_index(1).get_int(), 2);
+        assert_eq!(a.array_index(2).get_int(), 3);
     }
 
 }
