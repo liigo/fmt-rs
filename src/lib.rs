@@ -1,3 +1,5 @@
+use std::vec::Vec;
+
 enum FMT {}
 
 #[link(name="fmt", kind="static")]
@@ -55,6 +57,8 @@ extern {
 
     // other
     fn fmt_get_type(fmt: *mut FMT) -> u8;
+    fn fmt_packet(fmt: *mut FMT, cmd: i16, key: *const u8, data: *mut *const u8, size: *mut u32) -> *const u8;
+    fn fmt_freemem(freefn: *const u8, mem: *const u8);
 }
 
 #[deriving(PartialEq, Eq, Show)]
@@ -306,6 +310,28 @@ impl Fmt {
             fmt_object_remove(self.fmt, key.as_ptr());
         }
     }
+
+    pub fn packet(&self, cmd: i16) -> Vec<u8> {
+        unsafe {
+            let mut data = 0 as *const u8;
+            let mut size: u32 = 0;
+            let freefn = fmt_packet(self.fmt, cmd, 0 as *const u8, &mut data, &mut size);
+            let vec = Vec::from_raw_buf(data, size as uint);
+            fmt_freemem(freefn, data);
+            vec
+        }
+    }
+
+    pub fn packet_v2(&self, cmd: i16, key: &[u8, ..16]) -> Vec<u8> {
+        unsafe {
+            let mut data = 0 as *const u8;
+            let mut size: u32 = 0;
+            let freefn = fmt_packet(self.fmt, cmd, key.as_ptr(), &mut data, &mut size);
+            let vec = Vec::from_raw_buf(data, size as uint);
+            fmt_freemem(freefn, data);
+            vec
+        }
+    }
 }
 
 #[cfg(test)]
@@ -338,7 +364,6 @@ mod tests {
     }
 
     #[test]
-    #[no_mangle]
     fn test_fmt_object() {
         let mut o = Fmt::new_object();
         assert_eq!(o.get_type(), FmtType::Object);
@@ -354,5 +379,23 @@ mod tests {
         o.object_remove("b");
         let b = o.object_lookup("b");
         assert!(b.is_none());
+    }
+
+    #[test]
+    #[no_mangle]
+    fn test_fmt_packet() {
+        let mut o = Fmt::new_object();
+        // NOTE: string must end with \0 !
+        o.object_add("abc\0", Fmt::new_int(16));
+
+        let datav1: Vec<u8> = o.packet(1);
+        println!("v1: {}", datav1);
+        assert_eq!(datav1.len(), 18);
+        assert_eq!(datav1, vec![3,1,0,0,1,12,12,9,3,97,98,99,4,0,0,0,16,255]);
+
+        let datav2: Vec<u8> = o.packet_v2(1, &[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+        println!("v2: {}", datav2);
+        assert_eq!(datav2.len(), 24);
+        assert_eq!(datav2, vec![0x03, 0x02, 0x00, 0x14, 0x8B, 0x00, 0x38, 0xD3, 0x99, 0x7A, 0xE4, 0xFB, 0xCB, 0x7B, 0xC4, 0x37, 0xD2, 0x60, 0x52, 0xE8, 0xFD, 0x4E, 0x5F, 0x76]);
     }
 }

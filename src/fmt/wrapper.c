@@ -50,3 +50,21 @@ unsigned int fmt_get_str_len(FMT* fmt) {
 unsigned char* fmt_get_str(FMT* fmt) {
 	return fmt->m_str;
 }
+
+// returns free function, which can be used to free `data` later.
+void* fmt_packet(FMT* fmt, short cmd, char* key, unsigned char** data, unsigned int* len) {
+	automem_t mem;
+	automem_init(&mem, 32);
+	if(key == NULL)
+		fmt_packet_build(&mem, fmt, cmd);
+	else
+		fmt_packet_build_v2(&mem, fmt, cmd, key);
+	*data = mem.pdata;
+	*len  = mem.size;
+	return mem._free;
+}
+
+void fmt_freemem(void* freefn, void* mem) {
+	// __free defined in automem.h: `typedef void (*  __free)(void * ptr);`
+	((__free)freefn)(mem);
+}
