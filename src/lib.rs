@@ -1,23 +1,3 @@
-/*
-const PDT_BYTE    : u8 = 0x01;
-const PDT_SHORT   : u8 = 0x02;
-const PDT_USHORT  : u8 = 0x03;
-const PDT_INTEGER : u8 = 0x04;
-const PDT_UINTEGER: u8 = 0x05;
-const PDT_LONG    : u8 = 0x06;
-const PDT_ULONG   : u8 = 0x07;
-const PDT_DOUBLE  : u8 = 0x08;
-const PDT_STRING  : u8 = 0x09;
-
-const PDT_DATETIME: u8 = 0x0A;
-const PDT_ARRAY   : u8 = 0x0B;
-const PDT_OBJECT  : u8 = 0x0C;
-const PDT_NULL	: u8 = 0x0D;
-const PDT_BOOL	: u8 = 0x0E;
-
-const _PDT_END: u8 = 0xFF;
-*/
-
 enum FMT {}
 
 #[link(name="fmt", kind="static")]
@@ -75,6 +55,26 @@ extern {
 
     // other
     fn fmt_get_type(fmt: *mut FMT) -> u8;
+}
+
+#[deriving(PartialEq, Eq, Show)]
+pub enum FmtType {
+    Bool,
+    Byte,
+    Short,
+    UShort,
+    Int,
+    UInt,
+    Long,
+    ULong,
+    Double,
+    Datetime,
+    String,
+    Array,
+    Object,
+    Null,
+    EndTag,
+    Invalid,
 }
 
 pub struct Fmt {
@@ -157,7 +157,31 @@ impl Fmt {
         }
     }
 
-    pub fn get_boolean(&self) -> bool {
+    pub fn get_type(&self) -> FmtType {
+        let ty = unsafe {
+            fmt_get_type(self.fmt)
+        };
+        match ty {
+            1 => FmtType::Byte,
+            2 => FmtType::Short,
+            3 => FmtType::UShort,
+            4 => FmtType::Int,
+            5 => FmtType::UInt,
+            6 => FmtType::Long,
+            7 => FmtType::ULong,
+            8 => FmtType::Double,
+            9 => FmtType::String,
+           10 => FmtType::Datetime,
+           11 => FmtType::Array,
+           12 => FmtType::Object,
+           13 => FmtType::Null,
+           14 => FmtType::Bool,
+          255 => FmtType::EndTag,
+            _ => FmtType::Invalid,
+        }
+    }
+
+    pub fn get_bool(&self) -> bool {
         unsafe {
             fmt_get_boolean(self.fmt) != 0
         }
@@ -286,18 +310,21 @@ impl Fmt {
 
 #[cfg(test)]
 mod tests {
-    use Fmt;
+    use {Fmt, FmtType};
     #[test]
     fn test_fmt_primitives() {
         let fmt = Fmt::new_byte(16);
+        assert_eq!(fmt.get_type(), FmtType::Byte);
         assert_eq!(fmt.get_byte(), 16)
         let fmt = Fmt::new_int(8);
+        assert_eq!(fmt.get_type(), FmtType::Int);
         assert_eq!(fmt.get_int(), 8);
     }
 
     #[test]
     fn test_fmt_array() {
         let mut a = Fmt::new_array();
+        assert_eq!(a.get_type(), FmtType::Array);
         a.array_append(Fmt::new_int(1));
         a.array_append(Fmt::new_int(2));
         a.array_append(Fmt::new_int(3));
@@ -314,6 +341,7 @@ mod tests {
     #[no_mangle]
     fn test_fmt_object() {
         let mut o = Fmt::new_object();
+        assert_eq!(o.get_type(), FmtType::Object);
         assert_eq!(o.object_total(), 0);
         o.object_add("a", Fmt::new_int(1));
         o.object_add("b", Fmt::new_byte(2));
