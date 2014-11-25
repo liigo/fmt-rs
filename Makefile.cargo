@@ -1,0 +1,34 @@
+CC := gcc
+AR := ar
+CFLAGS ?= -fPIC
+
+.PHONY: all
+
+all: $(OUT_DIR)/libfmt.a
+
+$(OUT_DIR)/libfmt.a:  $(OUT_DIR)/protocol.o $(OUT_DIR)/arraylist.o $(OUT_DIR)/linkhash.o $(OUT_DIR)/automem.o $(OUT_DIR)/xxtea.o $(OUT_DIR)/buffmtparser.o $(OUT_DIR)/wrapper.o
+	$(AR) rcs $@ $^
+
+$(OUT_DIR)/protocol.o: src/fmt/protocol.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(OUT_DIR)/buffmtparser.o: src/fmt/buffmtparser.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(OUT_DIR)/arraylist.o: src/fmt/lib/arraylist.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(OUT_DIR)/linkhash.o: src/fmt/lib/linkhash.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(OUT_DIR)/automem.o: src/fmt/lib/automem.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(OUT_DIR)/xxtea.o: src/fmt/lib/xxtea.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(OUT_DIR)/wrapper.o: src/fmt/wrapper.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+
+all:
