@@ -1,65 +1,7 @@
 use std::vec::Vec;
+use self::raw::FMT;
 
-enum FMT {}
-
-#[link(name="fmt", kind="static")]
-#[allow(dead_code)]
-extern {
-    // creates FMT* primitive value objects.
-    // and there are functions to create advanced FMT objects, e.g.
-    // fmt_new_string, fmt_new_object, fmt_new_array, ... see bellow.
-    fn fmt_new_boolean(v: i32) -> *mut FMT;
-    fn fmt_new_byte(v: u8) -> *mut FMT;
-    fn fmt_new_short (v: i16) -> *mut FMT;
-    fn fmt_new_ushort(v: u16) -> *mut FMT;
-    fn fmt_new_integer (v: i32) -> *mut FMT;
-    fn fmt_new_uinteger(v: u32) -> *mut FMT;
-    fn fmt_new_long (v: i64)  -> *mut FMT;
-    fn fmt_new_ulong(v: u64)  -> *mut FMT;
-    fn fmt_new_double(v: f64) -> *mut FMT;
-    fn fmt_new_datetime(v: f64) -> *mut FMT;
-    fn fmt_new_null() -> *mut FMT;
-
-    // get primitive value from FMT* objects
-    fn fmt_get_boolean(fmt: *mut FMT) -> i32;
-    fn fmt_get_byte(fmt: *mut FMT) -> u8;
-    fn fmt_get_short (fmt: *mut FMT) -> i16;
-    fn fmt_get_ushort(fmt: *mut FMT) -> u16;
-    fn fmt_get_int (fmt: *mut FMT) -> i32;
-    fn fmt_get_uint(fmt: *mut FMT) -> u32;
-    fn fmt_get_long (fmt: *mut FMT) -> i64;
-    fn fmt_get_ulong(fmt: *mut FMT) -> u64;
-    fn fmt_get_double(fmt: *mut FMT) -> f64;
-    fn fmt_get_datetime(fmt: *mut FMT) -> f64;
-
-    // FMT strings
-    fn fmt_new_string(data: *const u8, len: i32) -> *mut FMT;
-    fn fmt_get_str(fmt: *mut FMT) -> *const u8;
-    fn fmt_get_str_len(fmt: *mut FMT) -> i32;
-
-    // FMT objects
-    fn fmt_new_object() -> *mut FMT;
-    fn fmt_object_total(fmt: *mut FMT) -> i32;
-    fn fmt_object_add(fmt: *mut FMT, key: *const u8, val: *mut FMT);
-    fn fmt_object_remove(fmt: *mut FMT, key: *const u8);
-    fn fmt_object_lookup(fmt: *mut FMT, key: *const u8) -> *mut FMT;
-
-    // FMT arrays
-    fn fmt_new_array() -> *mut FMT;
-    fn fmt_array_length(fmt: *mut FMT) -> u32;
-    fn fmt_array_append(fmt: *mut FMT, item: *mut FMT);
-    fn fmt_array_remove(fmt: *mut FMT, index: u32);
-    fn fmt_array_get_idx(fmt: *mut FMT, index: u32) -> *mut FMT;
-
-    // manage references count of FMT objects
-    fn fmt_object_get(fmt: *mut FMT) -> *mut FMT;
-    fn fmt_object_put(fmt: *mut FMT);
-
-    // other
-    fn fmt_get_type(fmt: *mut FMT) -> u8;
-    fn fmt_packet(fmt: *mut FMT, cmd: i16, key: *const u8, data: *mut *const u8, size: *mut u32) -> *const u8;
-    fn fmt_freemem(freefn: *const u8, mem: *const u8);
-}
+mod raw;
 
 #[deriving(PartialEq, Eq, Show)]
 pub enum FmtType {
@@ -88,7 +30,7 @@ pub struct Fmt {
 impl Drop for Fmt {
     fn drop(&mut self) {
         unsafe {
-            fmt_object_put(self.fmt);
+            raw::fmt_object_put(self.fmt);
         }
     }
 }
@@ -96,74 +38,74 @@ impl Drop for Fmt {
 #[inline]
 fn getfmt(fmt: *mut FMT) -> *mut FMT {
     unsafe {
-        fmt_object_get(fmt)
+        raw::fmt_object_get(fmt)
     }
 }
 
 impl Fmt {
     pub fn new_boolean(v: bool) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_boolean(if v {1} else {0})) }
+            Fmt { fmt: getfmt(raw::fmt_new_boolean(if v {1} else {0})) }
         }
     }
 
     pub fn new_byte(v: u8) -> Fmt {
     unsafe {
-            Fmt { fmt: getfmt(fmt_new_byte(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_byte(v)) }
         }
     }
 
     pub fn new_short(v: i16) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_short(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_short(v)) }
         }
     }
 
     pub fn new_ushort(v: u16) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_ushort(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_ushort(v)) }
         }
     }
 
     pub fn new_int(v: i32) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_integer(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_integer(v)) }
         }
     }
     
     pub fn new_uint(v: u32) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_uinteger(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_uinteger(v)) }
         }
     }
 
     pub fn new_long(v: i64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_long(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_long(v)) }
         }
     }
 
     pub fn new_ulong(v: u64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_ulong(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_ulong(v)) }
         }
     }
 
     pub fn new_double(v: f64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_double(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_double(v)) }
         }
     }
 
     pub fn new_datetime(v: f64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_datetime(v)) }
+            Fmt { fmt: getfmt(raw::fmt_new_datetime(v)) }
         }
     }
 
     pub fn get_type(&self) -> FmtType {
         let ty = unsafe {
-            fmt_get_type(self.fmt)
+            raw::fmt_get_type(self.fmt)
         };
         match ty {
             1 => FmtType::Byte,
@@ -187,110 +129,110 @@ impl Fmt {
 
     pub fn get_bool(&self) -> bool {
         unsafe {
-            fmt_get_boolean(self.fmt) != 0
+            raw::fmt_get_boolean(self.fmt) != 0
         }
     }
 
     pub fn get_byte(&self) -> u8 {
         unsafe {
-            fmt_get_byte(self.fmt)
+            raw::fmt_get_byte(self.fmt)
         }
     }
 
     pub fn get_short(&self) -> i16 {
         unsafe {
-            fmt_get_short(self.fmt)
+            raw::fmt_get_short(self.fmt)
         }
     }
 
     pub fn get_ushort(&self) -> u16 {
         unsafe {
-            fmt_get_ushort(self.fmt)
+            raw::fmt_get_ushort(self.fmt)
         }
     }
 
     pub fn get_int(&self) -> i32 {
         unsafe {
-            fmt_get_int(self.fmt)
+            raw::fmt_get_int(self.fmt)
         }
     }
 
     pub fn get_uint(&self) -> u32 {
         unsafe {
-            fmt_get_uint(self.fmt)
+            raw::fmt_get_uint(self.fmt)
         }
     }
 
     pub fn get_long(&self) -> i64 {
         unsafe {
-            fmt_get_long(self.fmt)
+            raw::fmt_get_long(self.fmt)
         }
     }
 
     pub fn get_ulong(&self) -> u64 {
         unsafe {
-            fmt_get_ulong(self.fmt)
+            raw::fmt_get_ulong(self.fmt)
         }
     }
 
     pub fn get_double(&self) -> f64 {
         unsafe {
-            fmt_get_double(self.fmt)
+            raw::fmt_get_double(self.fmt)
         }
     }
 
     pub fn get_datetime(&self) -> f64 {
         unsafe {
-            fmt_get_datetime(self.fmt)
+            raw::fmt_get_datetime(self.fmt)
         }
     }
 
     /// creates an array fmt object
     pub fn new_array() -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_array()) }
+            Fmt { fmt: getfmt(raw::fmt_new_array()) }
         }
     }
 
     pub fn array_length(&self) -> u32 {
         unsafe {
-            fmt_array_length(self.fmt)
+            raw::fmt_array_length(self.fmt)
         }
     }
 
     pub fn array_append(&mut self, fmt: Fmt) {
         unsafe {
-            fmt_array_append(self.fmt, fmt.fmt);
+            raw::fmt_array_append(self.fmt, fmt.fmt);
         }
     }
 
     pub fn array_remove(&mut self, index: u32) {
         unsafe {
-            fmt_array_remove(self.fmt, index);
+            raw::fmt_array_remove(self.fmt, index);
         }
     }
 
     pub fn array_index(&self, index: u32) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_array_get_idx(self.fmt, index)) }
+            Fmt { fmt: getfmt(raw::fmt_array_get_idx(self.fmt, index)) }
         }
     }
 
     pub fn new_object() -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(fmt_new_object()) }
+            Fmt { fmt: getfmt(raw::fmt_new_object()) }
         }
     }
 
     pub fn object_total(&self) -> i32 {
         unsafe {
-            fmt_object_total(self.fmt)
+            raw::fmt_object_total(self.fmt)
         }
     }
 
     pub fn object_lookup(&self, key: &str) -> Option<Fmt> {
         unsafe {
-            let fmt = fmt_object_lookup(self.fmt, key.as_ptr());
+            let fmt = raw::fmt_object_lookup(self.fmt, key.as_ptr());
             if fmt.is_null() {
                 None
             } else {
@@ -301,13 +243,13 @@ impl Fmt {
 
     pub fn object_add(&mut self, key: &str, val: Fmt) {
         unsafe {
-            fmt_object_add(self.fmt, key.as_ptr(), val.fmt);
+            raw::fmt_object_add(self.fmt, key.as_ptr(), val.fmt);
         }
     }
 
     pub fn object_remove(&mut self, key: &str) {
         unsafe {
-            fmt_object_remove(self.fmt, key.as_ptr());
+            raw::fmt_object_remove(self.fmt, key.as_ptr());
         }
     }
 
@@ -315,9 +257,9 @@ impl Fmt {
         unsafe {
             let mut data = 0 as *const u8;
             let mut size: u32 = 0;
-            let freefn = fmt_packet(self.fmt, cmd, 0 as *const u8, &mut data, &mut size);
+            let freefn = raw::fmt_packet(self.fmt, cmd, 0 as *const u8, &mut data, &mut size);
             let vec = Vec::from_raw_buf(data, size as uint);
-            fmt_freemem(freefn, data);
+            raw::fmt_freemem(freefn, data);
             vec
         }
     }
@@ -326,9 +268,9 @@ impl Fmt {
         unsafe {
             let mut data = 0 as *const u8;
             let mut size: u32 = 0;
-            let freefn = fmt_packet(self.fmt, cmd, key.as_ptr(), &mut data, &mut size);
+            let freefn = raw::fmt_packet(self.fmt, cmd, key.as_ptr(), &mut data, &mut size);
             let vec = Vec::from_raw_buf(data, size as uint);
-            fmt_freemem(freefn, data);
+            raw::fmt_freemem(freefn, data);
             vec
         }
     }
@@ -382,7 +324,6 @@ mod tests {
     }
 
     #[test]
-    #[no_mangle]
     fn test_fmt_packet() {
         let mut o = Fmt::new_object();
         // NOTE: string must end with \0 !
