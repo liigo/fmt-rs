@@ -101,14 +101,13 @@ impl Fmt {
     }
 
     pub fn is_valid(&self) -> bool {
-        if self.fmt.is_null() { 
-            true
-        } else {
-            self.get_type() == FmtType::Invalid
-        }
+        self.get_type() == FmtType::Invalid
     }
 
     pub fn get_type(&self) -> FmtType {
+        if self.fmt.is_null() {
+            return FmtType::Invalid;
+        }
         let ty = unsafe {
             raw::fmt_get_type(self.fmt)
         };
@@ -127,7 +126,7 @@ impl Fmt {
            12 => FmtType::Object,
            13 => FmtType::Null,
            14 => FmtType::Bool,
-          255 => FmtType::EndTag,
+          255 => FmtType::EndTag, // internal use
             _ => FmtType::Invalid,
         }
     }
