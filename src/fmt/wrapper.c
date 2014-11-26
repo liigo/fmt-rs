@@ -43,12 +43,12 @@ __int64 fmt_get_date(FMT* fmt) {
 	return fmt->m_date;
 }
 
-unsigned int fmt_get_str_len(FMT* fmt) {
-	return fmt->m_slen;
+unsigned char* fmt_get_string(FMT* fmt) {
+	return fmt->m_str;
 }
 
-unsigned char* fmt_get_str(FMT* fmt) {
-	return fmt->m_str;
+unsigned int fmt_get_string_len(FMT* fmt) {
+	return fmt->m_slen;
 }
 
 // returns free function, which can be used to free `data` later.

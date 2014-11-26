@@ -192,6 +192,29 @@ impl Fmt {
         }
     }
 
+    /// creates an string/binary fmt object
+    pub fn new_string(data: &[u8]) -> Fmt {
+        unsafe {
+            Fmt::from_raw(raw::fmt_new_string(data.as_ptr(), data.len() as u32))
+        }
+    }
+
+    pub fn new_empty_string() -> Fmt {
+        unsafe {
+            Fmt::from_raw(raw::fmt_new_string(0 as *const u8, 0 as u32))
+        }
+    }
+
+    pub fn get_string(&self) -> &[u8] {
+        use std::raw::Slice;
+        use std::intrinsics::transmute;
+        unsafe {
+            let data = raw::fmt_get_string(self.fmt);
+            let len  = raw::fmt_get_string_len(self.fmt) as uint;
+            transmute(Slice { data: data, len: len })
+        }
+    }
+
     /// creates an array fmt object
     pub fn new_array() -> Fmt {
         unsafe {
@@ -223,6 +246,7 @@ impl Fmt {
         }
     }
 
+    /// create an object fmt object
     pub fn new_object() -> Fmt {
         unsafe {
             Fmt::from_raw(raw::fmt_new_object())
@@ -344,6 +368,16 @@ mod tests {
         let fmt = Fmt::new_int(8);
         assert_eq!(fmt.get_type(), FmtType::Int);
         assert_eq!(fmt.get_int(), 8);
+    }
+
+    #[test]
+    fn test_fmt_string() {
+        let s1 = Fmt::new_string("liigo".as_bytes());
+        assert_eq!(s1.get_string(), "liigo".as_bytes());
+        let s2 = Fmt::new_string(&[]);
+        assert_eq!(s2.get_string(), [].as_slice());
+        let s3 = Fmt::new_empty_string();
+        assert_eq!(s3.get_string(), [].as_slice());
     }
 
     #[test]

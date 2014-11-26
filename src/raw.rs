@@ -36,9 +36,9 @@ extern {
     pub fn fmt_get_datetime(fmt: *mut FMT) -> f64;
 
     // FMT strings
-    pub fn fmt_new_string(data: *const u8, len: i32) -> *mut FMT;
-    pub fn fmt_get_str(fmt: *mut FMT) -> *const u8;
-    pub fn fmt_get_str_len(fmt: *mut FMT) -> i32;
+    pub fn fmt_new_string(data: *const u8, len: u32) -> *mut FMT;
+    pub fn fmt_get_string(fmt: *mut FMT) -> *const u8;
+    pub fn fmt_get_string_len(fmt: *mut FMT) -> u32;
 
     // FMT objects
     pub fn fmt_new_object() -> *mut FMT;
