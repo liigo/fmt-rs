@@ -104,6 +104,7 @@ impl Fmt {
         self.get_type() == FmtType::Invalid
     }
 
+    /// returns `FmtType::Invalid` if `is_valid()` returns false.
     pub fn get_type(&self) -> FmtType {
         if self.fmt.is_null() {
             return FmtType::Invalid;
