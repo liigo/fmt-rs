@@ -35,75 +35,76 @@ impl Drop for Fmt {
     }
 }
 
-#[inline]
-fn getfmt(fmt: *mut FMT) -> *mut FMT {
-    unsafe {
-        raw::fmt_object_get(fmt)
-    }
-}
-
 impl Fmt {
-    pub unsafe fn frow_raw(raw: *mut FMT) -> Fmt {
-        Fmt { fmt: raw }
+    pub unsafe fn from_raw(raw_fmt: *mut FMT) -> Fmt {
+        Fmt { fmt: raw::fmt_object_get(raw_fmt) }
     }
 
     pub fn new_boolean(v: bool) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_boolean(if v {1} else {0})) }
+            Fmt::from_raw(raw::fmt_new_boolean(if v {1} else {0}))
         }
     }
 
     pub fn new_byte(v: u8) -> Fmt {
     unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_byte(v)) }
+            Fmt::from_raw(raw::fmt_new_byte(v))
         }
     }
 
     pub fn new_short(v: i16) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_short(v)) }
+            Fmt::from_raw(raw::fmt_new_short(v))
         }
     }
 
     pub fn new_ushort(v: u16) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_ushort(v)) }
+            Fmt::from_raw(raw::fmt_new_ushort(v))
         }
     }
 
     pub fn new_int(v: i32) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_integer(v)) }
+            Fmt::from_raw(raw::fmt_new_integer(v))
         }
     }
     
     pub fn new_uint(v: u32) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_uinteger(v)) }
+            Fmt::from_raw(raw::fmt_new_uinteger(v))
         }
     }
 
     pub fn new_long(v: i64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_long(v)) }
+            Fmt::from_raw(raw::fmt_new_long(v))
         }
     }
 
     pub fn new_ulong(v: u64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_ulong(v)) }
+            Fmt::from_raw(raw::fmt_new_ulong(v))
         }
     }
 
     pub fn new_double(v: f64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_double(v)) }
+            Fmt::from_raw(raw::fmt_new_double(v))
         }
     }
 
     pub fn new_datetime(v: f64) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_datetime(v)) }
+            Fmt::from_raw(raw::fmt_new_datetime(v))
+        }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        if self.fmt.is_null() { 
+            true
+        } else {
+            self.get_type() == FmtType::Invalid
         }
     }
 
@@ -194,7 +195,7 @@ impl Fmt {
     /// creates an array fmt object
     pub fn new_array() -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_array()) }
+            Fmt::from_raw(raw::fmt_new_array())
         }
     }
 
@@ -218,13 +219,13 @@ impl Fmt {
 
     pub fn array_index(&self, index: u32) -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_array_get_idx(self.fmt, index)) }
+            Fmt::from_raw(raw::fmt_array_get_idx(self.fmt, index))
         }
     }
 
     pub fn new_object() -> Fmt {
         unsafe {
-            Fmt { fmt: getfmt(raw::fmt_new_object()) }
+            Fmt::from_raw(raw::fmt_new_object())
         }
     }
 
@@ -241,7 +242,7 @@ impl Fmt {
             if fmt.is_null() {
                 None
             } else {
-                Some(Fmt {fmt: getfmt(fmt)})
+                Some(Fmt::from_raw(fmt))
             }
         }
     }
@@ -283,11 +284,11 @@ impl Fmt {
     }
 }
 
-extern fn raw_fmt_callback(_parser: *mut u8, cmd: i16, fmt: *mut FMT, userdata: *mut u8) {
+extern fn raw_fmt_callback(_parser: *mut u8, cmd: i16, raw_fmt: *mut FMT, userdata: *mut u8) {
     unsafe {
         // userdata is a closure, see `FmtParser::push()`
         let closure = userdata as *mut |cmd: i16, fmt: &Fmt|;
-        let fmt = Fmt::frow_raw(getfmt(fmt));
+        let fmt = Fmt::from_raw(raw_fmt);
         (*closure)(cmd, &fmt);
     }
 }
@@ -309,6 +310,8 @@ impl FmtParser {
         }
     }
 
+    /// `fmt` passed in closure maybe invalid, if `cmd` has no corresponding fmt.
+    /// please check `fmt.is_valid()` before reading from it.
     pub fn push(&mut self, data: &[u8], cb: |cmd: i16, fmt: &Fmt|) {
         use std::intrinsics::transmute;
         unsafe {
