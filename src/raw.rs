@@ -1,5 +1,10 @@
 pub enum FMT {}
 
+#[allow(non_camel_case_types)]
+pub type fmt_available_callback = extern fn(
+        parser: *mut u8, cmd: i16, fmt: *mut FMT, userdata: *mut u8
+    );
+
 #[link(name="fmt", kind="static")]
 #[allow(dead_code)]
 extern {
@@ -53,8 +58,16 @@ extern {
     pub fn fmt_object_get(fmt: *mut FMT) -> *mut FMT;
     pub fn fmt_object_put(fmt: *mut FMT);
 
-    // other
+    // type and packet
     pub fn fmt_get_type(fmt: *mut FMT) -> u8;
     pub fn fmt_packet(fmt: *mut FMT, cmd: i16, key: *const u8, data: *mut *const u8, size: *mut u32) -> *const u8;
     pub fn fmt_freemem(freefn: *const u8, mem: *const u8);
+
+    // parser
+    pub fn buffered_fmt_parser_new() -> *mut u8;
+    pub fn buffered_fmt_parser_delete(parser: *mut u8);
+    pub fn buffered_fmt_parser_push(parser: *mut u8, data: *const u8, len: u32,
+                                    cb: fmt_available_callback, userdata: *mut u8);
+    pub fn buffered_fmt_parser_reset(parser: *mut u8);
+    pub fn buffered_fmt_parser_set_key(parser: *mut u8, key: *const u8);
 }

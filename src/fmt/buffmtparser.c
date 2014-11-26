@@ -15,10 +15,10 @@ struct BuffedFmtParser_s {
 };
 typedef struct BuffedFmtParser_s BuffedFmtParser;
 
-void* buffered_fmt_parser_new(int parse_server_data) {
+void* buffered_fmt_parser_new() {
 	BuffedFmtParser* parser = (BuffedFmtParser*) malloc(sizeof(*parser));
 	assert(parser);
-	parser->state = fmt_parser_new_state(parse_server_data ? 1 : 0);
+	parser->state = fmt_parser_new_state();
 	parser->mem = (automem_t*) malloc(sizeof(automem_t));
 	automem_init(parser->mem, 1024);
 	parser->dataIndex = 0;

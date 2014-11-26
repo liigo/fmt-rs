@@ -43,6 +43,10 @@ fn getfmt(fmt: *mut FMT) -> *mut FMT {
 }
 
 impl Fmt {
+    pub unsafe fn frow_raw(raw: *mut FMT) -> Fmt {
+        Fmt { fmt: raw }
+    }
+
     pub fn new_boolean(v: bool) -> Fmt {
         unsafe {
             Fmt { fmt: getfmt(raw::fmt_new_boolean(if v {1} else {0})) }
@@ -230,6 +234,7 @@ impl Fmt {
         }
     }
 
+    /// please ensure that `key` end with `\0`, e.g. `"liigo\0"`.
     pub fn object_lookup(&self, key: &str) -> Option<Fmt> {
         unsafe {
             let fmt = raw::fmt_object_lookup(self.fmt, key.as_ptr());
@@ -241,12 +246,14 @@ impl Fmt {
         }
     }
 
+    /// please ensure that `key` end with `\0`, e.g. `"liigo\0"`.
     pub fn object_add(&mut self, key: &str, val: Fmt) {
         unsafe {
             raw::fmt_object_add(self.fmt, key.as_ptr(), val.fmt);
         }
     }
 
+    /// please ensure that `key` end with `\0`, e.g. `"liigo\0"`.
     pub fn object_remove(&mut self, key: &str) {
         unsafe {
             raw::fmt_object_remove(self.fmt, key.as_ptr());
@@ -276,9 +283,56 @@ impl Fmt {
     }
 }
 
+extern fn raw_fmt_callback(_parser: *mut u8, cmd: i16, fmt: *mut FMT, userdata: *mut u8) {
+    unsafe {
+        // userdata is a closure, see `FmtParser::push()`
+        let closure = userdata as *mut |cmd: i16, fmt: &Fmt|;
+        let fmt = Fmt::frow_raw(getfmt(fmt));
+        (*closure)(cmd, &fmt);
+    }
+}
+
+pub struct FmtParser {
+    parser: *mut u8,
+}
+
+impl FmtParser {
+    pub fn new() -> FmtParser {
+        unsafe {
+            FmtParser { parser: raw::buffered_fmt_parser_new() }
+        }
+    }
+
+    pub fn delete(&mut self) {
+        unsafe {
+            raw::buffered_fmt_parser_delete(self.parser);
+        }
+    }
+
+    pub fn push(&mut self, data: &[u8], cb: |cmd: i16, fmt: &Fmt|) {
+        use std::intrinsics::transmute;
+        unsafe {
+            let closure: *mut u8 = transmute(&cb);
+            raw::buffered_fmt_parser_push(self.parser, data.as_ptr(), data.len() as u32, raw_fmt_callback, closure);
+        }
+    }
+
+    pub fn set_key(&mut self, key: &[u8, ..16]) {
+        unsafe {
+            raw::buffered_fmt_parser_set_key(self.parser, key.as_ptr());
+        }
+    }
+
+    pub fn reset(&mut self) {
+        unsafe {
+            raw::buffered_fmt_parser_reset(self.parser);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use {Fmt, FmtType};
+    use {Fmt, FmtType, FmtParser};
     #[test]
     fn test_fmt_primitives() {
         let fmt = Fmt::new_byte(16);
@@ -338,5 +392,31 @@ mod tests {
         println!("v2: {}", datav2);
         assert_eq!(datav2.len(), 24);
         assert_eq!(datav2, vec![0x03, 0x02, 0x00, 0x14, 0x8B, 0x00, 0x38, 0xD3, 0x99, 0x7A, 0xE4, 0xFB, 0xCB, 0x7B, 0xC4, 0x37, 0xD2, 0x60, 0x52, 0xE8, 0xFD, 0x4E, 0x5F, 0x76]);
+    }
+
+    #[test]
+    fn test_fmt_parser() {
+        let mut parser = FmtParser::new();
+        let datav1 = &[3,1,0,0,1,12,12,9,3,97,98,99,4,0,0,0,16,255];
+        parser.push(datav1, |cmd,fmt|{
+            assert_eq!(cmd, 1);
+            assert_eq!(fmt.get_type(), FmtType::Object);
+            assert_eq!(fmt.object_total(), 1);
+            assert!(fmt.object_lookup("abc\0").is_some());
+            assert_eq!(fmt.object_lookup("abc\0").unwrap().get_type(), FmtType::Int);
+            assert_eq!(fmt.object_lookup("abc\0").unwrap().get_int(), 16);
+        });
+        let datav2 = &[0x03, 0x02, 0x00, 0x14, 0x8B, 0x00, 0x38, 0xD3, 0x99, 0x7A, 0xE4, 0xFB, 0xCB, 0x7B, 0xC4, 0x37, 0xD2, 0x60, 0x52, 0xE8, 0xFD, 0x4E, 0x5F, 0x76];
+        parser.set_key(&[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+        parser.push(datav2, |cmd,fmt|{
+            assert_eq!(cmd, 1);
+            assert_eq!(fmt.get_type(), FmtType::Object);
+            assert_eq!(fmt.object_total(), 1);
+            assert!(fmt.object_lookup("abc\0").is_some());
+            assert_eq!(fmt.object_lookup("abc\0").unwrap().get_type(), FmtType::Int);
+            assert_eq!(fmt.object_lookup("abc\0").unwrap().get_int(), 16);
+        });
+
+        parser.delete();
     }
 }

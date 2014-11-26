@@ -9,7 +9,7 @@ extern "C" {
 
 typedef void (*fmt_available_callback)(void* parser, unsigned short cmd, FMT* fmt, void* userdata);
 
-void* buffered_fmt_parser_new(int parse_server_data);
+void* buffered_fmt_parser_new();
 void buffered_fmt_parser_delete(void* parser);
 void buffered_fmt_parser_push(void* parser,
                               const void* data, unsigned int len,
