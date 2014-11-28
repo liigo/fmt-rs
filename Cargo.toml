@@ -1,6 +1,6 @@
 [package]
 
-name = "fmt-rs"
+name = "fmt"
 version = "0.0.1"
 authors = ["Liigo Zhuang <com.liigo@gmail.com>"]
 
