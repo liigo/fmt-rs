@@ -455,7 +455,5 @@ mod tests {
             assert_eq!(fmt.object_lookup("abc\0").unwrap().get_type(), FmtType::Int);
             assert_eq!(fmt.object_lookup("abc\0").unwrap().get_int(), 16);
         });
-
-        parser.delete();
     }
 }
