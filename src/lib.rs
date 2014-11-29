@@ -321,16 +321,18 @@ pub struct FmtParser {
     parser: *mut u8,
 }
 
+impl Drop for FmtParser {
+    fn drop(&mut self) {
+        unsafe {
+            raw::buffered_fmt_parser_delete(self.parser);
+        }
+    }
+}
+
 impl FmtParser {
     pub fn new() -> FmtParser {
         unsafe {
             FmtParser { parser: raw::buffered_fmt_parser_new() }
-        }
-    }
-
-    pub fn delete(&mut self) {
-        unsafe {
-            raw::buffered_fmt_parser_delete(self.parser);
         }
     }
 
