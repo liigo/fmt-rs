@@ -33,7 +33,7 @@ extern {
     pub fn fmt_get_long (fmt: *mut FMT) -> i64;
     pub fn fmt_get_ulong(fmt: *mut FMT) -> u64;
     pub fn fmt_get_double(fmt: *mut FMT) -> f64;
-    pub fn fmt_get_datetime(fmt: *mut FMT) -> f64;
+    pub fn fmt_get_datetime(fmt: *mut FMT) -> u64;
 
     // FMT strings
     pub fn fmt_new_string(data: *const u8, len: u32) -> *mut FMT;

@@ -69,7 +69,7 @@ impl Fmt {
             Fmt::from_raw(raw::fmt_new_integer(v))
         }
     }
-    
+
     pub fn new_uint(v: u32) -> Fmt {
         unsafe {
             Fmt::from_raw(raw::fmt_new_uinteger(v))
@@ -186,7 +186,7 @@ impl Fmt {
         }
     }
 
-    pub fn get_datetime(&self) -> f64 {
+    pub fn get_datetime(&self) -> u64 {
         unsafe {
             raw::fmt_get_datetime(self.fmt)
         }
